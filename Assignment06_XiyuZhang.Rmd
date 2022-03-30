@@ -31,12 +31,15 @@ knitr::include_graphics("Exercise01.png")
 
 As it shows, MSE = 4.4, RMSE = 2.10 (approximately), MAE = 1.6.
 RMSE, whose value is larger than MAE, intensified the effect of outliers by taking the square of each difference, while MAE only calculate each absolute value equally. 
-\newpage
+
 
 # Exercise 02
 ```{r Exercise 02}
 #Using the above data, calculate the following “by hand” and show your work.
 knitr::include_graphics("confusionmatrix.png")
+knitr::include_graphics("accuracyprecisionrecall.png")
+#and the value of accuracy, precision and recall/sensitivity is shown as below.
 ```
+
 
 
