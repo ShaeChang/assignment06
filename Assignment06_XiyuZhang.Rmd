@@ -1,6 +1,6 @@
 ---
 title: "Assignment06_XiyuZhang"
-author: "ShaeChang"
+author: "ShaeChang & Jinli Wu"
 date: "3/28/2022"
 output:
   html_document: default
@@ -29,7 +29,7 @@ knitr::include_graphics("Exercise01.png")
 ```
 
 As it shows, MSE = 4.4, RMSE = 2.10 (approximately), MAE = 1.6.
-RMSE, whose value is larger than MAE, intensified the effect of outliers by taking the square of each difference, while MAE only calculate each absolute value equally. 
+RMSE, whose value is larger than MAE, intensified the effect of outliers by taking the square of each difference, while MAE only calculate each absolute value equally. For example, 
 
 
 # Exercise 02
@@ -62,21 +62,71 @@ knitr::include_graphics("accuracy4_2.png")
 To summarize, for one same supervised machine learning model, (in this case, directly calculate one value and guessing it for all observations), the accuracy could vary significantly just because the structure of the data of the observation is different. In this case, it varies from 0.51 to 0.99, and that is a big different. So consider context while evaluating accuracy in different supervised machine learning tasks is important.
 
 # Exercise 05
-```{r Exercise 05}
-#1. read the marbles data set, and divide it into a training set and a testing set.
-marblesdata <- read_csv("marbles.csv")
-set.seed(20200229)
-data_divide <- initial_split(data = marblesdata, prop = 0.80)
-marble_train <- training(x = data_divide)
-marble_test <- testing(x = data_divide)
-#2. develop an intuitive model for predicting black marbles
-#visualize the data
-marble_train %>%
-  ggplot(aes(x = size, y = color)) +
-  geom_jitter(width = 0.1, height = 0.1, alpha = 0.5) +
-  labs(title = "Traning Data for Marbles Data Set") +
-  theme_minimal()
+## Q1
+```{r}
+marbles_split <- initial_split(data=marbles,prop=0.8)
+marbles_split_train <- training(x=marbles_split)
+marbles_split_test <- testing(x=marbles_split)
 ```
+
+## Q2
+```{r}
+marbles_split_train %>%
+  group_by(size,color)%>%
+  count()%>%
+  ggplot(aes(x=size,y=n,fill=color))+
+  geom_bar(stat="identity",position="fill")
+```
+When we get a big marble, it is more likely it is a black marble, so we will predict it to be black; 
+When we get a small marble, it is more likely it is a white marble, so we will predict it to be white.
+
+## Q3
+```{r}
+prediction <- function(x){
+  if_else(x=="big", "black", "white")
+}
+marbles_split_test$pred_color = factor(prediction(marbles_split_test$size))
+marbles_split_test$pred_color
+```
+
+## Q4
+```{r}
+accuracy_confusion <- function(x,y){
+  table <- table(x,y)
+  table_tibble <- as_tibble(table(x,y))
+  accuracy <- (table_tibble[[1,3]]+table_tibble[[4,3]])/sum(table_tibble[,3])
+  return(list(accuracy,table))
+}
+accuracy_confusion(marbles_split_test$color,marbles_split_test$pred_color)
+```
+## Q5
+```{r}
+cart_rec <- 
+  recipe (formula = color ~ size, data = marbles_split_train)
+
+cart_mod <- 
+  decision_tree() %>% 
+  set_engine(engine = "rpart") %>% 
+  set_mode(mode = "classification")
+
+cart_wf <- 
+  workflow() %>% 
+  add_recipe(cart_rec) %>%
+  add_model(cart_mod)
+
+cart_fit <- 
+  cart_wf %>% 
+  fit(data = marbles_split_train)
+rpart.plot::rpart.plot(x = cart_fit$fit$fit$fit)
+```
+
+## Q6
+```{r}
+Step5 <- predict(object = cart_fit, new_data = marbles_split_test)
+identical(marbles_split_test$pred_color, Step5$.pred_class)
+```
+The decision tree/CART model and the model from part 2 generated the same predictions. These two models have the same outcomes because they use the same underlying rule: for a binary outcome, if the probability of an event occuring exceeds a threshold, then the model predit that event, and the thresholds are set to be 0.5 in both models. 
+
 
 # Stretch Part 01
 ```{r Stretch Part01}
