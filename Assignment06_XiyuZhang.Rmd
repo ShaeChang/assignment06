@@ -58,8 +58,8 @@ knitr::include_graphics("accuracy4_1.png")
 #same logic, for the second circumstance. The accuracy, in this case, should be 0.99, shown as below.
 knitr::include_graphics("accuracy4_2.png")
 ```
+Considering context might reverse our decision that is only based on accuracy. For example, in the situation 2 above, if we predcit all 1, we get accuracy= 0.01, if we predict all 0, we get accuracy=0.99, so we chose to predict all 0. However, if the context is cancer screening:  predicting all 1, we get a lot of false positive but no false negative;  predicting all 0, we get no false positive but some false negative. In the context of cancer screening, false negative means that people who have cancern are not getting treated, and false positive means that people who do have cancern are getting more testing. The cost of false negative is greater than false positive. As such, we want to avoid false negative. In this context, we will choose to predict all 1 rather than predicting all 0. As we can see, considering the context can potentially reverses our original decision based on accuracy. 
 
-To summarize, for one same supervised machine learning model, (in this case, directly calculate one value and guessing it for all observations), the accuracy could vary significantly just because the structure of the data of the observation is different. In this case, it varies from 0.51 to 0.99, and that is a big different. So consider context while evaluating accuracy in different supervised machine learning tasks is important.
 
 # Exercise 05
 ## Q1
