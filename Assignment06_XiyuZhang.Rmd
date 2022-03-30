@@ -21,7 +21,6 @@ library(workflows)
 library(tune)
 library(yardstick)
 ```
-\newpage
 
 # Exercise 01
 ```{r Exercise 01}
@@ -41,5 +40,11 @@ knitr::include_graphics("accuracyprecisionrecall.png")
 #and the value of accuracy, precision and recall/sensitivity is shown as below.
 ```
 
+# Exercise 03
+```{r Exercise 03}
+#using the data, calculate the following “by hand” and show your work
+knitr::include_graphics("exercise03.png")
+#the value of accuracy, misclassification rate is shown as below.
+```
 
 
