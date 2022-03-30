@@ -53,6 +53,8 @@ The value of accuracy, misclassification rate is shown as above.
 #to draw the confusion matrix, assume that there are in all 100 observations in the population.
 #for the first circumstance, if simply guessing the same value for all observations, then
 knitr::include_graphics("guessing4_1.png")
-#the confusion matrix should be 0.51, shown as below:
+#the accuracy should be 0.51, shown as below:
 knitr::include_graphics("accuracy4_1.png")
+#same logic, for the second circumstance. The accuracy, in this case, should be 0.99, shown as below.
+knitr::include_graphics("accuracy4_2.png")
 ```
