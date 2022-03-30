@@ -58,5 +58,22 @@ knitr::include_graphics("accuracy4_1.png")
 #same logic, for the second circumstance. The accuracy, in this case, should be 0.99, shown as below.
 knitr::include_graphics("accuracy4_2.png")
 ```
+
 To summarize, for one same supervised machine learning model, (in this case, directly calculate one value and guessing it for all observations), the accuracy could vary significantly just because the structure of the data of the observation is different. In this case, it varies from 0.51 to 0.99, and that is a big different. So consider context while evaluating accuracy in different supervised machine learning tasks is important.
 
+# Exercise 05
+```{r Exercise 05}
+#1. read the marbles data set, and divide it into a training set and a testing set.
+marblesdata <- read_csv("marbles.csv")
+set.seed(20200229)
+data_divide <- initial_split(data = marblesdata, prop = 0.80)
+marble_train <- training(x = data_divide)
+marble_test <- testing(x = data_divide)
+#2. develop an intuitive model for predicting black marbles
+#visualize the data
+marble_train %>%
+  ggplot(aes(x = size, y = color)) +
+  geom_jitter(width = 0.1, height = 0.1, alpha = 0.5) +
+  labs(title = "Traning Data for Marbles Data Set") +
+  theme_minimal()
+```
