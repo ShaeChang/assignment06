@@ -58,3 +58,5 @@ knitr::include_graphics("accuracy4_1.png")
 #same logic, for the second circumstance. The accuracy, in this case, should be 0.99, shown as below.
 knitr::include_graphics("accuracy4_2.png")
 ```
+To summarize, for one same supervised machine learning model, (in this case, directly calculate one value and guessing it for all observations), the accuracy could vary significantly just because the structure of the data of the observation is different. In this case, it varies from 0.51 to 0.99, and that is a big different. So consider context while evaluating accuracy in different supervised machine learning tasks is important.
+
