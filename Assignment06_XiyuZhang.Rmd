@@ -135,7 +135,6 @@ identical(marbles_split_test$pred_color, Step5$.pred_class)
 ```
 The decision tree/CART model and the model from part 2 generated the same predictions. These two models have the same outcomes because they use the same underlying rule: for a binary outcome, if the probability of an event occuring exceeds a threshold, then the model predit that event, and the thresholds are set to be 0.5 in both models. 
 
-
 # Stretch Part 01
 ```{r Stretch Part01}
 set.seed(20200302)
@@ -162,10 +161,8 @@ rats <- tribble(~rat_burrow, ~pizza_proximity,
   0, 5,
   0, 7
 ) %>%
- mutate(rat_burrow = factor(rat_burrow)) %>%
-  transmute(
-    rat_burrow = as.numeric(as.character(rat_burrow)),
-    pizza_proximity = pizza_proximity) #transform the factor to numeric form
+ mutate(rat_burrow = factor(rat_burrow))
+
 # split into training and testing data
 split <- initial_split(rats, prop = 0.75)
 rats_training <- training(split)
@@ -189,10 +186,10 @@ assess_kn <- rats_kn$splits[[1]] %>% assessment()
 knn_mod_k1 <-
   nearest_neighbor(neighbors = 1) %>%
   set_engine(engine = "kknn") %>%
-  set_mode(mode = "regression")
+  set_mode(mode = "classification")
 # (2) fit the knn model specification on the training data
 knn_fit_k1 <- knn_mod_k1 %>%
-  fit(formula = pizza_proximity ~ rat_burrow, data = analysis_k1)
+  fit(formula = rat_burrow ~ pizza_proximity, data = analysis_k1)
 # (3) use the estimated model to predict values in the testing data
 prediction_k1 <-
   bind_cols(assess_k1,
@@ -203,24 +200,24 @@ prediction_k1 <-
 knn_mod_k3 <-
   nearest_neighbor(neighbors = 3) %>%
   set_engine(engine = "kknn") %>%
-  set_mode(mode = "regression")
+  set_mode(mode = "classification")
 # (2) fit the knn model specification on the training data
 knn_fit_k3 <- knn_mod_k3 %>%
-  fit(formula = pizza_proximity ~ rat_burrow, data = analysis_k3)
+  fit(formula =  rat_burrow ~ pizza_proximity, data = analysis_k3)
 # (3) use the estimated model to predict values in the testing data
 prediction_k3 <-
   bind_cols(assess_k3,
     predict(object = knn_fit_k3, new_data = assess_k3)
   )
-#for k = n, let n = 5 because we have 10 observations in total in our analysis data set, and 5 will be used
+#for k = n, let n = 5 because we have 5 observations in total in our assessment data set
 # (1) create a knn model specification
 knn_mod_kn <-
   nearest_neighbor(neighbors = 5) %>%
   set_engine(engine = "kknn") %>%
-  set_mode(mode = "regression")
+  set_mode(mode = "classification")
 # (2) fit the knn model specification on the training data
 knn_fit_kn <- knn_mod_kn %>%
-  fit(formula = pizza_proximity ~ rat_burrow, data = analysis_kn)
+  fit(formula = rat_burrow ~ pizza_proximity, data = analysis_kn)
 # (3) use the estimated model to predict values in the testing data
 prediction_kn <-
   bind_cols(assess_kn,
@@ -231,10 +228,10 @@ knitr::kable(prediction_k1)
 knitr::kable(prediction_k3)
 knitr::kable(prediction_kn)
 
+#calculate the accuracy and confusion matrix by hand
+knitr::include_graphics("data/stretch01.png")
+# To conclude, from the result we can see, the third model (k = n) results in the highest accuracy in this case. Also, considering the workload, the first model should be the easiest one and the thrid model should be the toughest one, because you could only take a look at the one nearest value in the treatment data set and come to the conclusion in the first model, but should calculate the all n values in the treatment data set and come up with the distance, and eventually decide rather there exists rat burrow or not, that makes the work tough in the third model.
 ```
-
-To summerize, the rmsen is the smallest (2.07) among all rmse calculated (others are 4.90 and 2.60, respectively), so it seems the last model fit the true values best. Computationally, the first model is the easiest one and the third model is the toughtest, considering the first only need to look up one value to predict and the third one need to look up 5. Note: it seems impossible to calculate the accuracy and the confusion matrix since the result using regression here is numeric but not Boolean. So instead of using the accuracy to estimate the goodness of the model, RMSE is calculated to value the model.
-
 
 # Stretch Part 02
 ```{r Stretch Part02}
