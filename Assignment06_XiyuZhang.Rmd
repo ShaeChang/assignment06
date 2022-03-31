@@ -54,13 +54,17 @@ The value of accuracy, misclassification rate is shown as above.
 # Exercise 04
 ```{r Exercise 04}
 #to draw the confusion matrix, assume that there are in all 100 observations in the population.
-#for the first circumstance, if simply guessing the same value for all observations, then
-knitr::include_graphics("data/guessing4_1.png")
-#the accuracy should be 0.51, shown as below:
-knitr::include_graphics("data/accuracy4_1.png")
-#same logic, for the second circumstance. The accuracy, in this case, should be 0.99, shown as below.
-knitr::include_graphics("data/accuracy4_2.png")
+#for the first circumstance, we can either choose to guess everything is 1, or everthing is 0, and the corresponding accuracy for each approach is:
+knitr::include_graphics("data/exercise04_1.png")
 ```
+If we guess all 1, the accuracy is 0.51; If we guess all 0, the accuracy is 0.49; we chose to guess 1 for all values. 
+
+```{r Exercise 04}
+#for the first circumstance, we can either choose to guess everything is 1, or everthing is 0, and the corresponding accuracy for each approach is:
+knitr::include_graphics("data/exercise04_2.png")
+```
+If we guess all 1, the accuracy is 0.01; If we guess all 0, the accuracy is 0.99; we chose to guess 0 for all values. 
+
 Considering context might reverse our decision that is only based on accuracy. For example, in the situation 2 above, if we predcit all 1, we get accuracy= 0.01, if we predict all 0, we get accuracy=0.99, so we chose to predict all 0. However, if the context is cancer screening:  predicting all 1, we get a lot of false positive but no false negative;  predicting all 0, we get no false positive but some false negative. In the context of cancer screening, false negative means that people who have cancern are not getting treated, and false positive means that people who do have cancern are getting more testing. The cost of false negative is greater than false positive. As such, we want to avoid false negative. In this context, we will choose to predict all 1 rather than predicting all 0. As we can see, considering the context can potentially reverses our original decision based on accuracy. 
 
 
