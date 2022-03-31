@@ -23,6 +23,7 @@ library(yardstick)
 library(readr)
 library(ggplot2)
 library(purrr)
+library(rpart)
 ```
 
 # Exercise 01
@@ -233,3 +234,55 @@ knitr::kable(prediction_kn)
 ```
 
 To summerize, the rmsen is the smallest (2.07) among all rmse calculated (others are 4.90 and 2.60, respectively), so it seems the last model fit the true values best. Computationally, the first model is the easiest one and the third model is the toughtest, considering the first only need to look up one value to predict and the third one need to look up 5. Note: it seems impossible to calculate the accuracy and the confusion matrix since the result using regression here is numeric but not Boolean. So instead of using the accuracy to estimate the goodness of the model, RMSE is calculated to value the model.
+
+
+# Stretch Part 02
+```{r Stretch Part02}
+
+# write a function for gini index
+calc_gini_2 <- function(left, right) {
+  
+  # calculate the gini index for each node
+  gini_left <- 1 - (sum(left==1)/length(left))^2 - (sum(left==0)/length(left))^2
+  gini_right <- 1 - (sum(right==1)/length(right))^2 - (sum(right==0)/length(right))^2
+  
+  # calculate the overall gini index
+  #1. define S
+  S <- length(left) + length(right)
+  #2. calculate the gini_combined
+  gini_combined <- ((length(left)/S)*gini_left) + ((length(right)/S)*gini_right)
+  
+  # return
+  return(
+    list(
+      gini_left = gini_left,
+      gini_right = gini_right,
+      gini_combined = gini_combined
+    )
+  )
+}
+
+#test the function
+  #1.
+  calc_gini_2(left = c(0, 0, 0), right = c(1, 1, 1))
+  #2.
+  calc_gini_2(left = c(0, 0, 1, 1), right = c(0, 0, 1, 1))
+  #3.
+  dt_analysis <- analysis(rats_k1$splits[[3]]) %>%
+    arrange(pizza_proximity)
+  calc_gini_2(left = dt_analysis$rat_burrow[1:5], right = dt_analysis$rat_burrow[6:10])
+
+#Evaluate all of the non-empty splits to decide the node
+  map_dbl(
+  .x = 1:9,
+  .f = ~calc_gini_2(
+    left = dt_analysis$rat_burrow[1:.x],
+    right = dt_analysis$rat_burrow[(.x + 1):10]
+  )$gini_combined
+)
+  #among all of the 9 possible gini index of the 9 nodes chosen, observed that the fourth gini index is the smallest one (0.1500000), and x = 4 then.
+  #check the 4th value of pizza_proximity
+  (dt_analysis$pizza_proximity)[[4]]
+  
+#Thus, pizza_proximity = 0.3 is a good value to split on for a decision tree based on this small analysis data set.
+```
