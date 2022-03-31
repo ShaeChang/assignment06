@@ -29,7 +29,7 @@ library(rpart)
 # Exercise 01
 ```{r Exercise 01}
 #To calculate MSE, RMSE, MAE by hand and display the work
-knitr::include_graphics("Exercise01.png")
+knitr::include_graphics("data/Exercise01.png")
 ```
 
 As it shows, MSE = 4.4, RMSE = 2.10 (approximately), MAE = 1.6.
@@ -53,14 +53,14 @@ knitr::include_graphics("data/exercise03.png")
 The value of accuracy, misclassification rate is shown as above.
 
 # Exercise 04
-```{r Exercise 04}
+```{r Exercise 04_1}
 #to draw the confusion matrix, assume that there are in all 100 observations in the population.
 #for the first circumstance, we can either choose to guess everything is 1, or everthing is 0, and the corresponding accuracy for each approach is:
 knitr::include_graphics("data/exercise04_1.png")
 ```
 If we guess all 1, the accuracy is 0.51; If we guess all 0, the accuracy is 0.49; we chose to guess 1 for all values. 
 
-```{r Exercise 04}
+```{r Exercise 04_2}
 #for the first circumstance, we can either choose to guess everything is 1, or everthing is 0, and the corresponding accuracy for each approach is:
 knitr::include_graphics("data/exercise04_2.png")
 ```
@@ -72,7 +72,10 @@ Considering context might reverse our decision that is only based on accuracy. F
 # Exercise 05
 ## Q1
 ```{r}
-marbles_split <- initial_split(data=marbles,prop=0.8)
+#read the marbles data set, and divide it into a training set and a testing set.
+marblesdata <- read_csv("data/marbles.csv")
+set.seed(20200229)
+marbles_split <- initial_split(data = marblesdata, prop = 0.80)
 marbles_split_train <- training(x=marbles_split)
 marbles_split_test <- testing(x=marbles_split)
 ```
