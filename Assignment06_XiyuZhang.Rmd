@@ -286,3 +286,85 @@ calc_gini_2 <- function(left, right) {
   
 #Thus, pizza_proximity = 0.3 is a good value to split on for a decision tree based on this small analysis data set.
 ```
+
+
+# Stretch Part 03
+```{r Stretch Part03}
+
+#write a new function calculating the gini index for splits in a decision tree model for multi-class classification.
+calc_gini_k <- function(left, right) {
+  
+  #calculate gini index for each split
+   #1. left
+  left_prep <- prop.table(table(left)) %>% #an intermediate variable help calculate gini_left
+  as_tibble() %>%
+  pull()
+  gini_left <- 1 - sum((left_prep)^2)
+    #2. right
+  right_prep<- prop.table(table(right)) %>% #an intermediate variable help calculate gini_right
+  as_tibble() %>%
+  pull()
+  gini_right <- 1 - sum((right_prep)^2)
+  
+  #calculate the overall gini index
+    #1. define S
+  S <- length(left) + length(right)
+    #2. calculate the gini_combined
+  gini_combined <- ((length(left)/S)*gini_left) + ((length(right)/S)*gini_right)
+  
+  # return
+  return(
+    list(
+      gini_left = gini_left,
+      gini_right = gini_right,
+      gini_combined = gini_combined
+    )
+  )
+  
+}
+
+#test the function
+calc_gini_k(left = c(0, 0, 0), right = c(1, 1, 1))
+calc_gini_k(left = c(0, 0, 1, 1), right = c(0, 0, 1, 1))
+calc_gini_k(left = dt_analysis$rat_burrow[1:5], right = dt_analysis$rat_burrow[6:10])
+
+#generate the data set
+set.seed(20220318)
+data <- tibble(
+  x1 = runif(100, min = 0, max = 1),
+  x2 = runif(100, min = 0, max = 1),
+  x1_prob = runif(100, min = 0, max = 1),
+  x2_prob = runif(100, min = 0, max = 1)
+) %>%
+  mutate(
+    y = case_when(
+    x1_prob > x1 & x2_prob > x2 ~ "a",
+    x1_prob < x1 & x2_prob > x2 ~ "b",
+    x1_prob > x1 & x2_prob < x2 ~ "c",
+    x1_prob < x1 & x2_prob < x2 ~ "d",
+    )
+) %>%
+  mutate(y = factor(y)) %>%
+  select(x1, y)
+
+#Evaluate all of the non-empty splits to decide the node
+  #1. the vector of all gini_combined for each node
+gini_combined <- map_dbl(
+  .x = 1:99,
+  .f = ~calc_gini_k(
+    left = data$y[1:.x],
+    right = data$y[(.x + 1):100]
+  )$gini_combined
+) 
+#this it the vector of all gini_combined for each node.
+
+  #2. to find the minimum gini_combined and the corresponding order of it
+gini_combined %>%
+  as_tibble() %>%
+  mutate(order = 1:99) %>%
+  arrange(value) %>%
+  glimpse()
+#find the corresponding predictor for our best split node
+data$x1[11]
+#So, the optimal choice of the split node is to split the data set after x1 = 0.5276528, the 11th observation we have.
+```
