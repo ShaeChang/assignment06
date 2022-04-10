@@ -1,0 +1,413 @@
+---
+title: "assingment07"
+author: "Jinli Wu & Xiyu Zhang"
+date: "4/8/2022"
+output: html_document
+---
+
+```{r}
+library(tidyverse) 
+library(tidymodels)
+library(lubridate)
+library(themis)
+library(vip)
+library(glmnet)
+library(ranger)
+library(kknn)
+library(yardstick)
+library(tune)
+library(workflows)
+library(recipes)
+library(parsnip)
+library(rsample)
+```
+
+```{r}
+# use this url to download the data directly into R
+df <- read_csv("https://data.cityofnewyork.us/api/views/43nn-pn8j/rows.csv")
+
+# clean names with janitor
+sampled_df <- df %>% 
+  janitor::clean_names() 
+
+# create an inspection year variable
+sampled_df <- sampled_df %>%
+  mutate(inspection_date = mdy(inspection_date)) %>%
+  mutate(inspection_year = year(inspection_date))
+
+# get most-recent inspection
+sampled_df <- sampled_df %>%
+  group_by(camis) %>%
+  filter(inspection_date == max(inspection_date)) %>%
+  ungroup()
+
+# subset the data
+sampled_df <- sampled_df %>%
+  select(camis, boro, zipcode, cuisine_description, inspection_date,
+         action, violation_code, violation_description, grade,
+         inspection_type, latitude, longitude, council_district,
+         census_tract, inspection_year, critical_flag) %>%
+  filter(complete.cases(.)) %>%
+  filter(inspection_year >= 2017) %>%
+  filter(grade %in% c("A", "B", "C")) 
+
+# create the binary target variable
+sampled_df <- sampled_df %>%
+  mutate(grade = if_else(grade == "A", "A", "Not A")) %>%
+  mutate(grade = as.factor(grade))
+
+# create extra predictors
+sampled_df <- sampled_df %>%
+  group_by(boro, zipcode, cuisine_description, inspection_date,
+           action, violation_code, violation_description, grade,
+           inspection_type, latitude, longitude, council_district,
+           census_tract, inspection_year)  %>%
+  mutate(vermin = str_detect(violation_description, pattern = "mice|rats|vermin|roaches")) %>%
+  summarize(violations = n(),
+            vermin_types = sum(vermin),
+            critical_flags = sum(critical_flag == "Y")) %>%
+  ungroup()
+
+# write the data
+write_csv(sampled_df, "restaurant_grades.csv")
+```
+
+## Q1-1
+```{r}
+set.seed(20201020)
+
+#split the data
+df_split <- initial_split(data=sampled_df,prop=0.8)
+df_train <- training(df_split)
+df_test <- testing(df_split)
+
+#create a recipe
+cart_rec <- recipe(formula = grade ~ ., data = df_train)%>%
+  themis::step_downsample(grade)
+
+#estimate a decision tree
+cart_mod <-
+  decision_tree()%>%
+  set_engine(engine = "rpart")%>%
+  set_mode(mode = "classification")
+cart_wf <- workflow() %>% 
+  add_recipe(cart_rec) %>%
+  add_model(cart_mod)
+cart_fit <- cart_wf %>% 
+  fit(data = df_train)
+rpart.plot::rpart.plot(x = cart_fit$fit$fit$fit)
+```
+## Q1-2
+```{r}
+#evaluate the model
+predictions <- bind_cols(
+  df_test, 
+  predict(object = cart_fit, new_data = df_test), 
+  predict(object = cart_fit, new_data = df_test, type = "prob")
+)
+
+#create a confusion matrix
+conf_mat(data = predictions, truth = grade, estimate = .pred_class)
+
+#calculate the precision and recall/sensitivity
+metric_1 <- rbind(
+  precision(data = predictions, truth = grade, estimate = .pred_class),
+  recall(data = predictions, truth = grade, estimate = .pred_class)
+  #put metric in one form
+)
+metric_1
+
+```
+The precision of the model is .9944107, which means that when model predits the event, there is 99.44107% chance that the prediction is a true positve. As such, the model is excellent at making correct prediction when it predits an event. 
+The recall of the model is .7944576, which means when an event actually happens, there is a 79.44576% chance that the model will correctly predict it. As such, the model is moderately good at predicting the true events. 
+
+## Q1-3
+We used rpart engine and developed a decision tree for estimating a model. First, we could add auxiliary information, and thus with more features, switch to some regularized regressions, such as ridge regression, or LASSO regression. They could generate an estimation model better with more information while avoid overfitting. Second, we could make better use of current information by better feature engineering. For example, violation_code and violation_description could convert to some more general (comparing to the current violation_code) categorical variables, and may be useful to develop a new node.
+
+## Q1-4
+```{r}
+cart_fit %>%
+  extract_fit_parsnip() %>% 
+  vip(num_features = 10)
+```
+Vip is a package for constructing variable importance scores for many types of supervised learning algorithms. Here, we firstly use the syntax of "extract_fit_parsnip" to return our parsnip model fit. Then we use "vip()" to plot variable importance scores for the predictores in our model. By setting num_features = 10, we specified the number of variable importance scores to plot is 10. Because we use rpart engine, at each node, gini coefficient is used to pure class subsets, so here we are calculating variable importance using gini coefficient as the feature metric by:
+
+Feature importance (FI) = Feature metric * number of instances – its left child node metric * number of instances for the left child – its right child node metric * number of instances for the right child
+
+## Q1-5
+One of ombudsman's responsibilities at the NYC health department is to investgiate people's complaints about the sanitary condition of restaurants. The number of complaints usually exceeds what the health department's resources can deal with, so the ombudsman needs to decide which complaints to prioritize in investigation and which ones to postpone (or completely ignore). As new complaints come in, the ombudsman can use this model to predict the probability of that restaurant having a condition of "Not A", and allocate resources based on the  probability.
+
+# Exercise 02
+
+## Q2-1
+```{r}
+
+#convert date into useable variable
+Chicago$weekday <- wday(Chicago$date, label = T)
+Chicago$month <- month(Chicago$date, label = T)
+Chicago$yearday <- yday(Chicago$date)
+
+Chicago_modeling <- Chicago %>% 
+  slice(1:5678)
+Chicago_implementation <- Chicago %>% 
+  slice(5679:5698) %>% 
+  select(-ridership)
+
+```
+
+## Q2-2
+### a
+```{r}
+#set up a testing environment
+set.seed(20211101)
+chicago_split <- initial_split(data = Chicago_modeling)
+chicago_train <- training(x = chicago_split)
+chicago_test <- testing(x = chicago_split)
+```
+
+### b
+```{r}
+#exploratory data analysis
+
+p1 <- ggplot(chicago_train, aes(x = weekday, y = ridership, fill = weekday)) +
+  geom_violin() +
+  labs(title = "Ridership by weekday") +
+  theme_minimal()
+  
+p2 <- ggplot(chicago_train, aes(x = month, y = ridership, fill = month)) +
+  geom_bar(stat="identity") +
+  labs(title = "Ridership by month") +
+  theme_minimal()
+  
+p3 <- ggplot(chicago_train, aes(x = year(date), y = ridership, fill = year(date))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Ridership by year") +
+  theme_minimal()
+  
+library(patchwork)
+(p1 | p2)/
+  p3
+```
+It seems that among weekdays, the ridership is usually higher than weekend, and during summer, the ridership is usllay higher than winter. 
+
+```{r}
+count(chicago_train, yearday)
+```
+For p3, we could say the ridership is increasing over time in different years. By counting the observations in different years, we recognized that the drop of ridership in the last year, 2016, is due to the only 169 observations in our dataset, comparing to the around 270 observations in previous years.
+
+### c
+```{r}
+folds <- vfold_cv(data = chicago_train, v = 10)
+```
+
+## Q2-3
+### 1
+```{r}
+chicago_rec <- recipe(formula = ridership ~ ., data= chicago_train) %>%
+  step_holiday(date, keep_original_cols = FALSE) %>%
+  step_scale(all_numeric_predictors()) %>%
+  step_center(all_numeric_predictors()) %>%
+  step_unorder(month, weekday) %>%
+  step_dummy(month, weekday)
+```
+
+### 2,3,4,5
+
+lasso
+```{r}
+lasso_grid <- grid_regular(penalty(), levels = 10)
+
+lasso_mod <- linear_reg(penalty = tune(), mixture = 1 ) %>% 
+  set_engine("glmnet")
+
+lasso_wf <- workflow() %>%
+  add_recipe(chicago_rec) %>%
+  add_model(lasso_mod) 
+
+lasso_cv <- lasso_wf %>%
+  tune_grid(
+  resamples = folds,
+  grid = lasso_grid
+  )
+
+lasso_best <- lasso_cv %>%
+  select_best(metric = "rmse")
+
+lasso_final <- finalize_workflow(
+  lasso_wf,
+  parameters = lasso_best
+)
+
+lasso_fit_rs <-
+  lasso_final %>% 
+  fit_resamples(resamples = folds,
+                metric = metric_set(rmse, mae))
+
+collect_metrics(lasso_fit_rs)
+
+collect_metrics(lasso_fit_rs, summarize = FALSE) %>%
+  filter(.metric == "rmse") %>% 
+  ggplot(aes(id, .estimate, group = .estimator)) + 
+  geom_line() + 
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3)) + 
+  labs(title = "Calculated RMSE Across the 10 Folds", y = "RMSE_hat") +
+  theme_minimal()
+
+#For mae, we couldn't get mae by the code above, so we extract it manually:
+ctrl <- control_resamples(save_pred = TRUE)
+lasso_fit_rsmae <-
+  lasso_final %>% 
+  fit_resamples(resamples = folds,
+               control = ctrl)
+lasso_pred <- collect_predictions(lasso_fit_rsmae)
+mae <- rbind(
+  mae(filter(lasso_pred, id == "Fold01"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold02"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold03"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold04"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold05"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold06"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold07"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold08"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold09"), truth = ridership, estimate = .pred),
+  mae(filter(lasso_pred, id == "Fold10"), truth = ridership, estimate = .pred)
+) 
+mae
+#These are maes for each folds
+```
+
+
+random forest
+```{r}
+rforest_mod <- rand_forest(mode = "regression",engine = "ranger")
+
+rforest_wf <- workflow() %>%
+  add_recipe(chicago_rec) %>%
+  add_model(rforest_mod) 
+
+rforest_rs <-
+  rforest_wf %>% 
+  fit_resamples(resamples = folds)
+
+collect_metrics(rforest_rs)
+
+collect_metrics(rforest_rs, summarize = FALSE) %>%
+  filter(.metric == "rmse") %>% 
+  ggplot(aes(id, .estimate, group = .estimator)) + 
+  geom_line() + 
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3)) + 
+  labs(title = "Calculated RMSE Across the 10 Folds", y = "RMSE_hat") +
+  theme_minimal()
+
+#Calculate mae
+lasso_fit_rsmae <-
+  lasso_final %>% 
+  fit_resamples(resamples = folds,
+               control = ctrl)
+rforest_rsmae <-
+  rforest_wf %>% 
+  fit_resamples(resamples = folds,
+                control = ctrl)
+rforest_pred <- collect_predictions(rforest_rsmae)
+mae2 <- rbind(
+  mae(filter(rforest_pred, id == "Fold01"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold02"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold03"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold04"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold05"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold06"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold07"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold08"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold09"), truth = ridership, estimate = .pred),
+  mae(filter(rforest_pred, id == "Fold10"), truth = ridership, estimate = .pred)
+) 
+mae2
+
+```
+
+knn
+```{r}
+knn_mod <-nearest_neighbor(neighbors = 5) %>% 
+  set_engine(engine = "kknn") %>% 
+  set_mode(mode = "regression")
+knn_wf <-workflow() %>% 
+  add_recipe(chicago_rec) %>% 
+  add_model(knn_mod)
+knn_rs <-
+  knn_wf %>% 
+  fit_resamples(resamples = folds)
+collect_metrics(knn_rs)
+collect_metrics(knn_rs, summarize = FALSE) %>%
+  filter(.metric == "rmse") %>% 
+  ggplot(aes(id, .estimate, group = .estimator)) + 
+  geom_line() + 
+  geom_point() + 
+  scale_y_continuous(limits = c(0, 3)) + 
+  labs(title = "Calculated RMSE Across the 10 Folds", y = "RMSE_hat") +
+  theme_minimal()
+
+#Calculate mae
+knn_rsmae <-
+  knn_wf %>% 
+  fit_resamples(resamples = folds,
+               control = ctrl)
+
+knn_pred <- collect_predictions(knn_rsmae)
+mae3 <- rbind(
+  mae(filter(knn_pred, id == "Fold01"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold02"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold03"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold04"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold05"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold06"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold07"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold08"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold09"), truth = ridership, estimate = .pred),
+  mae(filter(knn_pred, id == "Fold10"), truth = ridership, estimate = .pred)
+) 
+mae3
+```
+
+### 5
+```{r}
+bind_rows(
+  `lasso` = show_best(lasso_fit_rs, metric = "rmse", n = 1),
+  `random forest` = show_best(rforest_rs, metric = "rmse", n = 1),
+  `knn` = show_best(knn_rs, metric = "rmse",n = 1),
+  .id = "model"
+)
+```
+
+## Q2-4
+```{r}
+#Estimate the out-of-sample error rate
+#since the rmse of lasso model is the lowest one, so we use our lasso_final to fit the testing data.
+lasso_fit <- lasso_final %>% 
+  fit(data = chicago_train)
+predictions <- 
+  bind_cols(chicago_test, 
+            predict(object = lasso_fit, 
+                    new_data = chicago_test))
+rmse(data = predictions, truth = ridership, estimate = .pred)
+```
+
+## Q2-5
+```{r}
+#implement the final model
+predictions_implement <- 
+  bind_cols(Chicago_implementation, 
+            predict(object = lasso_fit, 
+                    new_data = Chicago_implementation))
+print(predictions_implement$.pred)
+```
+## Q2-6
+```{r}
+lasso_fit %>%
+  extract_fit_parsnip() %>% 
+  vip(num_features = 53)
+```
+```
+Our final model is a lasso regression model. Lasso regression works well when we have a great number of features but not too many observations. Our modeling data has 5678 observations and 53 variables, so a lasso regression is not especially advantageous in this sense. Lasso regressions works better than ridge regression when there are "useless" features. Based on the feature importance, we can see that certain variables, such as dew and precip, have  little value in predicting ridership. As such, our lasso regression is advantageous because the model will reduce the impacts of those variables when making predictions. The RMSE generated by applying our model to the test is 2.152092, which is comparatively small compared to how variable ridership is in the test sample, which ranges from 1.091 to 26.255. As such our model has a good prediction power. In our model, the most important predictors are weekday dummy variables, ridership at adjacent train stops, and months. The model is globally interpretable because it makes sense that weekdays are major predictors of the ridership because people need to go to their work and that months are major predictors of the ridership because people go out less during winters. Our model is also locally interpretable because ridership in adjacent train stops are locally meaningful in predicting the ridership at the stop that is of our interest.
+
