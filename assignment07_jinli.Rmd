@@ -1,6 +1,6 @@
 ---
 title: "assingment07"
-author: "Jinli Wu"
+author: "Jinli Wu & Xiyu Zhang"
 date: "4/8/2022"
 output: html_document
 ---
@@ -96,6 +96,7 @@ cart_fit <- cart_wf %>%
   fit(data = df_train)
 rpart.plot::rpart.plot(x = cart_fit$fit$fit$fit)
 ```
+## Q1-2
 ```{r}
 predictions <- bind_cols(
   df_test, 
@@ -109,26 +110,25 @@ recall(data = predictions, truth = grade, estimate = .pred_class)
 The precision of the model is .9944107, which means that when model predits the event, there is 99.44107% chance that the prediction is a true positve. As such, the model is excellent at making correct prediction when it predits an event. 
 The recall of the model is .7944576, which means when an event actually happens, there is a 79.44576% chance that the model will correctly predict it. As such, the model is moderately good at predicting the true events. 
 
-```{r}
+## Q1-3
+???
 
-```
-
+## Q1-4
 ```{r}
 cart_fit %>%
   extract_fit_parsnip() %>% 
   vip(num_features = 10)
 ```
+Vip is a package for constructing variable importance scores for many types of supervised learning algorithms. Here, we firstly use the syntax of "extract_fit_parsnip" to return our parsnip model fit. Then we use "vip()" to plot variable importance scores for the predictores in our model. By setting num_features = 10, we specified the number of variable importance scores to plot is 10. Because we use rpart engine, at each node, gini coefficient is used to pure class subsets, so here we are calculating variable importance using gini coefficient as the feature metric by:
 
-Gini impurity
+Feature importance (FI) = Feature metric * number of instances – its left child node metric * number of instances for the left child – its right child node metric * number of instances for the right child
 
-Our decision tree used the cart algorithm to predict classification, so it uses Gini impurity to determine features to be used at each node. The feature with the lowest Gini impurtiy
-
-Feature importance in this model is calculated as the decrease in node impurity weighted by the probability of reaching that node. The node probability can be calculated by the number of samples that reach the node, divided by the total number of samples. The higher the value the more important the feature.
-
+## Q1-5
+One of ombudsman's responsibilities at the NYC health department is to investgiate people's complaints about the sanitary condition of restaurants. The number of complaints usually exceeds what the health department's resources can deal with, so the ombudsman needs to decide which complaints to prioritize in investigation and which ones to postpone (or completely ignore). As new complaints come in, the ombudsman can use this model to predict the probability of that restaurant having a condition of "Not A", and allocate resources based on the  probability.
 
 # Exercise 02
 
-## 1
+## Q2-1
 ```{r}
 Chicago$weekday <- wday(Chicago$date, label = T)
 Chicago$month <- month(Chicago$date, label = T)
@@ -142,7 +142,7 @@ Chicago_implementation <- Chicago %>%
   select(-ridership)
 ```
 
-## 2
+## Q2-2
 ### a
 ```{r}
 set.seed(20211101)
@@ -186,7 +186,7 @@ folds <- vfold_cv(data = chicago_train, v = 10)
 folds
 ```
 
-## 3
+## Q2-3
 ### 1
 ```{r}
 chicago_rec <- recipe(formula = ridership ~ ., data= chicago_train) %>%
@@ -198,7 +198,8 @@ chicago_rec <- recipe(formula = ridership ~ ., data= chicago_train) %>%
 ```
 
 ### 2,3,4,5
-#### lasso
+
+lasso
 ```{r}
 lasso_grid <- grid_regular(penalty(), levels = 10)
 
@@ -238,7 +239,6 @@ collect_metrics(lasso_fit_rs, summarize = FALSE) %>%
   scale_y_continuous(limits = c(0, 3)) + 
   labs(title = "Calculated RMSE Across the 10 Folds", y = "RMSE_hat") +
   theme_minimal()
-```
 ctrl <- control_resamples(save_pred = TRUE)
 lasso_fit_rsmae <- lasso_final %>%
   fit_resamples(folds, control = ctrl) 
@@ -257,10 +257,10 @@ mae <- rbind(
 ) 
 #calculate mae for each resample
 mae
+```
 
 
-
-#### random forest
+random forest
 ```{r}
 rforest_mod <- rand_forest(mode = "regression",engine = "ranger")
 
@@ -284,7 +284,7 @@ collect_metrics(rforest_rs, summarize = FALSE) %>%
   theme_minimal()
 ```
 
-#### knn
+knn
 ```{r}
 knn_mod <-nearest_neighbor(neighbors = 5) %>% 
   set_engine(engine = "kknn") %>% 
@@ -316,14 +316,17 @@ bind_rows(
 )
 ```
 
-## 4
+## Q2-4
 ```{r}
 knn_fit <- knn_wf %>% 
   fit(data = chicago_train)
 ```
 
-## 5
+## Q2-5
 ```{r}
 
 ```
+## Q2-5
+```{r}
 
+```
