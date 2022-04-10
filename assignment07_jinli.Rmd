@@ -158,17 +158,17 @@ chicago_test <- testing(x = chicago_split)
 ```{r}
 #exploratory data analysis
 
-p1 <- ggplot(chi_modeling_train, aes(x = weekday, y = Clark_Lake, fill = weekday)) +
+p1 <- ggplot(chicago_train, aes(x = weekday, y = ridership, fill = weekday)) +
   geom_violin() +
   labs(title = "Ridership by weekday") +
   theme_minimal()
   
-p2 <- ggplot(chi_modeling_train, aes(x = month, y = Clark_Lake, fill = month)) +
+p2 <- ggplot(chicago_train, aes(x = month, y = ridership, fill = month)) +
   geom_bar(stat="identity") +
   labs(title = "Ridership by month") +
   theme_minimal()
   
-p3 <- ggplot(chi_modeling_train, aes(x = yearday, y = Clark_Lake, fill = yearday)) +
+p3 <- ggplot(chicago_train, aes(x = yearday, y = ridership, fill = yearday)) +
   geom_bar(stat = "identity") +
   labs(title = "Ridership by year") +
   theme_minimal()
