@@ -130,21 +130,24 @@ One of ombudsman's responsibilities at the NYC health department is to investgia
 
 ## Q2-1
 ```{r}
+
+#convert date into useable variable
 Chicago$weekday <- wday(Chicago$date, label = T)
 Chicago$month <- month(Chicago$date, label = T)
 Chicago$yearday <- yday(Chicago$date)
 
 Chicago_modeling <- Chicago %>% 
   slice(1:5678)
-
 Chicago_implementation <- Chicago %>% 
   slice(5679:5698) %>% 
   select(-ridership)
+
 ```
 
 ## Q2-2
 ### a
 ```{r}
+#set up a testing environment
 set.seed(20211101)
 chicago_split <- initial_split(data = Chicago_modeling)
 chicago_train <- training(x = chicago_split)
@@ -153,15 +156,20 @@ chicago_test <- testing(x = chicago_split)
 
 ### b
 ```{r}
-chicago_train%>%
-  ggplot(aes(x=ridership))+
-  geom_histogram()
+#exploratory data analysis
 
-chicago_train%>%
-  ggplot(aes(x=weekday, y=ridership),stat="identity")+
-  geom_col()
-
+p1 <- ggplot(chi_modeling_train, aes(x = weekday, y = Clark_Lake, fill = weekday)) +
+  geom_violin() +
+  labs(title = "Ridership by weekday") +
+  theme_minimal()
+  
+p2 <- ggplot(chi_modeling_train, aes(x = month, y = Clark_Lake, fill = month)) +
+  geom_bar(stat="identity") +
+  labs(title = "Ridership by month") +
+  theme_minimal()
+ 
 chicago_train$weekends <- case_when(
+#because there are big difference between weekdays and weekends
   chicago_train$weekday == "Mon" ~ 0,
   chicago_train$weekday == "Tue" ~ 0,
   chicago_train$weekday == "Wed" ~ 0,
@@ -171,14 +179,34 @@ chicago_train$weekends <- case_when(
   chicago_train$weekday == "Sun" ~ 1,
   )
 
-chicago_train%>%
+p3 <- chicago_train%>%
   ggplot(aes(x=date, y=ridership, color=as.factor(weekends)))+
-  geom_point()
+  geom_point() +
+  labs(title = "Weekends or not") +
+  theme_minimal()
 
-chicago_train%>%
+p4 <- chicago_train%>%
   ggplot(aes(x=ridership, y=temp,color=as.factor(weekends)))+
-  geom_point()
+  geom_point() +
+  labs(title = "Influence of tempreture") +
+  theme_minimal()
+  
+p5 <- ggplot(chi_modeling_train, aes(x = yearday, y = Clark_Lake, fill = yearday)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Ridership by year") +
+  theme_minimal()
+  
+library(patchwork)
+(p1 | p2)/
+(p3 | p4)/
+  p5
 ```
+It seems that among weekdays, the ridership is usually higher than weekend, and during summer, the ridership is usllay higher than winter. 
+
+```{r}
+count(chi_modeling_train, yearday)
+```
+For p5, we could say the ridership is increasing over time in different years. By counting the observations in different years, we recognized that the drop of ridership in the last year, 2016, is due to the only 169 observations in our dataset, comparing to the around 270 observations in previous years.
 
 ### c
 ```{r}
