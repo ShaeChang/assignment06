@@ -111,7 +111,7 @@ The precision of the model is .9944107, which means that when model predits the 
 The recall of the model is .7944576, which means when an event actually happens, there is a 79.44576% chance that the model will correctly predict it. As such, the model is moderately good at predicting the true events. 
 
 ## Q1-3
-???
+We used rpart engine and developed a decision tree for estimating a model. First, we could add auxiliary information, and thus with more features, switch to some regularized regressions, such as ridge regression, or LASSO regression. They could generate an estimation model better with more information while avoid overfitting. Second, we could make better use of current information by better feature engineering. For example, violation_code and violation_description could convert to some more general (comparing to the current violation_code) categorical variables, and may be useful to develop a new node.
 
 ## Q1-4
 ```{r}
