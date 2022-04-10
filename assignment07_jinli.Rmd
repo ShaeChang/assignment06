@@ -346,8 +346,15 @@ bind_rows(
 
 ## Q2-4
 ```{r}
-knn_fit <- knn_wf %>% 
+#Estimate the out-of-sample error rate
+#since the rmse of lasso model is the lowest one, so we use our lasso_final to fit the testing data.
+lasso_fit <- lasso_final %>% 
   fit(data = chicago_train)
+predictions <- 
+  bind_cols(chicago_test, 
+            predict(object = lasso_fit, 
+                    new_data = chicago_test))
+rmse(data = predictions, truth = ridership, estimate = .pred)
 ```
 
 ## Q2-5
