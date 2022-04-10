@@ -182,7 +182,7 @@ It seems that among weekdays, the ridership is usually higher than weekend, and 
 ```{r}
 count(chi_modeling_train, yearday)
 ```
-For p5, we could say the ridership is increasing over time in different years. By counting the observations in different years, we recognized that the drop of ridership in the last year, 2016, is due to the only 169 observations in our dataset, comparing to the around 270 observations in previous years.
+For p3, we could say the ridership is increasing over time in different years. By counting the observations in different years, we recognized that the drop of ridership in the last year, 2016, is due to the only 169 observations in our dataset, comparing to the around 270 observations in previous years.
 
 ### c
 ```{r}
@@ -243,24 +243,7 @@ collect_metrics(lasso_fit_rs, summarize = FALSE) %>%
   scale_y_continuous(limits = c(0, 3)) + 
   labs(title = "Calculated RMSE Across the 10 Folds", y = "RMSE_hat") +
   theme_minimal()
-ctrl <- control_resamples(save_pred = TRUE)
-lasso_fit_rsmae <- lasso_final %>%
-  fit_resamples(folds, control = ctrl) 
-lasso_pred <- collect_predictions(lasso_fit_rsmae)
-mae <- rbind(
-  mae(filter(lasso_pred, id == "Fold01"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold02"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold03"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold04"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold05"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold06"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold07"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold08"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold09"), truth = ridership, estimate = .pred),
-  mae(filter(lasso_pred, id == "Fold10"), truth = ridership, estimate = .pred)
-) 
-#calculate mae for each resample
-mae
+
 ```
 
 
@@ -335,7 +318,12 @@ rmse(data = predictions, truth = ridership, estimate = .pred)
 
 ## Q2-5
 ```{r}
-
+#implement the final model
+predictions_implement <- 
+  bind_cols(Chicago_implementation, 
+            predict(object = lasso_fit, 
+                    new_data = Chicago_implementation))
+print(predictions_implement$.pred)
 ```
 ## Q2-5
 ```{r}
