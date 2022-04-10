@@ -167,39 +167,15 @@ p2 <- ggplot(chi_modeling_train, aes(x = month, y = Clark_Lake, fill = month)) +
   geom_bar(stat="identity") +
   labs(title = "Ridership by month") +
   theme_minimal()
- 
-chicago_train$weekends <- case_when(
-#because there are big difference between weekdays and weekends
-  chicago_train$weekday == "Mon" ~ 0,
-  chicago_train$weekday == "Tue" ~ 0,
-  chicago_train$weekday == "Wed" ~ 0,
-  chicago_train$weekday == "Thu" ~ 0,
-  chicago_train$weekday == "Fri" ~ 0,
-  chicago_train$weekday == "Sat" ~ 1,
-  chicago_train$weekday == "Sun" ~ 1,
-  )
-
-p3 <- chicago_train%>%
-  ggplot(aes(x=date, y=ridership, color=as.factor(weekends)))+
-  geom_point() +
-  labs(title = "Weekends or not") +
-  theme_minimal()
-
-p4 <- chicago_train%>%
-  ggplot(aes(x=ridership, y=temp,color=as.factor(weekends)))+
-  geom_point() +
-  labs(title = "Influence of tempreture") +
-  theme_minimal()
   
-p5 <- ggplot(chi_modeling_train, aes(x = yearday, y = Clark_Lake, fill = yearday)) +
+p3 <- ggplot(chi_modeling_train, aes(x = yearday, y = Clark_Lake, fill = yearday)) +
   geom_bar(stat = "identity") +
   labs(title = "Ridership by year") +
   theme_minimal()
   
 library(patchwork)
 (p1 | p2)/
-(p3 | p4)/
-  p5
+  p3
 ```
 It seems that among weekdays, the ridership is usually higher than weekend, and during summer, the ridership is usllay higher than winter. 
 
